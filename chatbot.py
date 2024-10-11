@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_ace import st_ace
-from ai_logic import generate_code, generate_explanation, load_guidelines_summary
+from ai_logic import generate_code, generate_explanation, load_or_create_vector_store, search_vector_store
 
 # 페이지 설정
 st.set_page_config(page_title="🧑🏻‍💻 웹 콘텐츠 수정 자동화 챗봇")
@@ -8,10 +8,8 @@ st.set_page_config(page_title="🧑🏻‍💻 웹 콘텐츠 수정 자동화 �
 # 페이지 제목
 st.title("🧑🏻‍💻 웹 콘텐츠 수정 자동화 챗봇")
 
-if "guidelines_summary" not in st.session_state:
-    with st.spinner("웹 접근성 지침 요약을 로드하고 있습니다..."):
-        guidelines_summary = load_guidelines_summary()
-        st.session_state.guidelines_summary = guidelines_summary
+# 벡터 스토어 로드 또는 생성
+vector_store = load_or_create_vector_store()
 
 st.write("🇰🇷 한국형 웹 콘텐츠 접근성 지침을 바탕으로 코드를 수정해보세요 🤖")
 
@@ -54,8 +52,10 @@ if st.button("✨ 코드 생성/수정"):
     if code_prompt and user_code:
         with st.spinner("AI가 코드를 생성/수정하고 있습니다..."):
             try:
+                # 벡터 스토어에서 관련 지침 검색
+                relevant_guidelines = search_vector_store(vector_store, code_prompt)
                 # AI를 통한 코드 생성
-                modified_code = generate_code(code_prompt, user_code, st.session_state.guidelines_summary)
+                modified_code = generate_code(code_prompt, user_code, relevant_guidelines)
                 st.success("코드 생성/수정이 완료되었습니다.")
                 # 생성된 코드를 세션 상태에 저장
                 st.session_state.modified_code = modified_code
