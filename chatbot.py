@@ -1,25 +1,12 @@
-import os
 import streamlit as st
-from streamlit_ace import st_ace  # 코드 편집기를 위한 모듈
-import openai  # AI 코드 생성을 위한 모듈
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# OpenAI API 키 설정 123
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from streamlit_ace import st_ace
+from ai_logic import generate_code, generate_explanation, load_guidelines_summary
 
 # 페이지 설정
 st.set_page_config(page_title="🧑🏻‍💻 웹 콘텐츠 수정 자동화 챗봇")
 
 # 페이지 제목
 st.title("🧑🏻‍💻 웹 콘텐츠 수정 자동화 챗봇")
-
-# 접근성 지침 요약 로드
-def load_guidelines_summary(): 
-    with open("data/wcag.txt", "r", encoding="utf-8") as file:
-        summary = file.read()
-    return summary
 
 if "guidelines_summary" not in st.session_state:
     with st.spinner("웹 접근성 지침 요약을 로드하고 있습니다..."):
@@ -61,55 +48,6 @@ st.session_state.user_code = user_code
 # 코드 수정 요청 입력
 st.markdown("### 💡 코드 수정 요청")
 code_prompt = st.text_input("코드 수정이나 생성에 대한 요청을 입력하세요.", placeholder="예: 웹 접근성 문제를 해결해줘")
-
-# OpenAI API를 사용하여 코드 생성 함수 정의
-def generate_code(prompt, code, guidelines):
-    full_prompt = f"""
-당신은 웹 접근성 전문가입니다. 아래의 웹 콘텐츠 접근성 지침 요약을 참고하여, 사용자가 제공한 HTML 코드를 '{prompt}' 요청에 따라 수정하세요.
-
-웹 콘텐츠 접근성 지침 요약:
-{guidelines}
-
-사용자 제공 코드:
-{code}
-
-수정된 코드만 제공하세요.
-"""
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": full_prompt}],
-        max_tokens=2048,
-        temperature=0,
-        n=1,
-        stop=None,
-    )
-    generated_code = response.choices[0].message.content.strip()
-    return generated_code
-
-def generate_explanation(original_code, modified_code):
-    explanation_prompt = f"""
-다음은 사용자가 제공한 원본 코드입니다:
-
-원본 코드:
-{original_code}
-
-그리고 다음은 수정된 코드입니다:
-
-수정된 코드:
-{modified_code}
-
-수정 사항을 간략히 설명해주세요.
-"""
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": explanation_prompt}],
-        max_tokens=500,
-        temperature=0,
-        n=1,
-        stop=None,
-    )
-    explanation = response.choices[0].message.content.strip()
-    return explanation
 
 # 코드 생성/수정 버튼
 if st.button("✨ 코드 생성/수정"):
